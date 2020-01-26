@@ -2,8 +2,8 @@
 
 int main(int argc, char *argv[]) {
 
-    char* filename = argv[1];
-    FILE* fp;
+    char *filename = argv[1];
+    FILE *fp;
 
     char program[1000]; // 1000 chars is max program size
 
@@ -21,9 +21,6 @@ int main(int argc, char *argv[]) {
         // -1 istruction indicates program finish
         if (inchar != -1) {
             i++;
-            if (inchar == *"[") {
-                depth_limit++;
-            }
         }
         else {
             break;
@@ -35,7 +32,7 @@ int main(int argc, char *argv[]) {
     int mem[30000] = {0}; // Program memory
     int *ptr = mem; // Beginning of memory
 
-    int stack[depth_limit]; // depth_limit is number of '[', indicates maximum stack size
+    int stack[100] = {0}; // 100 is maximum stack size
     int stack_depth = 0; // Current stack layer
     int skip = 0; // Skip to end of loop
 
@@ -47,10 +44,9 @@ int main(int argc, char *argv[]) {
         if (instruction == -1) {
             break;
         }
-        else if (instruction == *"]") {
+        else if (instruction == ']') {
             if (skip) {
                 // The loop never executed
-                stack_depth--;
                 skip = 0;
             }
             else if (*ptr) {
@@ -65,7 +61,7 @@ int main(int argc, char *argv[]) {
         else if (skip) {
             // Skipping to end of loop
         }
-        else if (instruction == *"[") {                
+        else if (instruction == '[') {                
             stack[stack_depth] = i;
             // record start position of loop
 
@@ -78,27 +74,27 @@ int main(int argc, char *argv[]) {
                 skip = 1;
             }
         }
-        else if (instruction == *">") {
+        else if (instruction == '>') {
             // Move pointer up
             ptr++;
         }
-        else if (instruction == *"<") {
+        else if (instruction == '<') {
             // Move pointer down
             ptr--;
         }
-        else if (instruction == *"+") {
+        else if (instruction == '+') {
             // Increment value at pointer
             ++*ptr;
         }
-        else if (instruction == *"-") {
+        else if (instruction == '-') {
             // Decrement value at pointer
             --*ptr;
         }
-        else if (instruction == *".") {
+        else if (instruction == '.') {
             // Print value at pointer          
             putchar(*ptr);
         }
-        else if (instruction == *",") {
+        else if (instruction == ',') {
             // Read value to pointer
             *ptr = getchar();
         }
