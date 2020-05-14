@@ -1,106 +1,123 @@
+#include <stdlib.h>
 #include <stdio.h>
 
+#define MAX_PROGRAM_SIZE 30000
+#define MAX_MEMORY_SIZE 30000
+
+typedef struct StackNode {
+    void *prev;
+    int val;
+} StackNode;
+
+int is_instruction(char c);
+void read_program(char *filename, char *program);
+StackNode* get_stack_base();
+void push_to_stack(StackNode** head, int val);
+int pop_from_stack(StackNode** head);
+
 int main(int argc, char *argv[]) {
+    char program[MAX_PROGRAM_SIZE];
+    read_program(argv[1], program);
 
-    char *filename = argv[1];
-    FILE *fp;
+    StackNode* head = get_stack_base();
 
-    char program[1000]; // 1000 chars is max program size
+    int mem[MAX_MEMORY_SIZE] = {0};
+    int *ptr = mem;
 
-    fp = fopen(filename, "r"); // Open program file
-    
+    int skip = 0;
     int i = 0;
-    int depth_limit = 0; // Loop depth limit
-    while (1) {
-        // Read each character from file into program array
 
-        char inchar = fgetc(fp);
-        
-        program[i] = inchar;
+    char instruction;
 
-        // -1 istruction indicates program finish
-        if (inchar != -1) {
-            i++;
+    while ((instruction = program[i++]) != '\0') {
+        if (instruction == ']') {
+            if (skip)
+                skip--;
+            else if (*ptr)
+                i = (*head).val;
+            else
+                pop_from_stack(&head);
         }
-        else {
-            break;
+        else if (instruction == '[') {
+            if (*ptr)
+                push_to_stack(&head, i);
+            else
+                skip++;
         }
-    }
-    
-    fclose(fp); // Close program file
-
-    int mem[30000] = {0}; // Program memory
-    int *ptr = mem; // Beginning of memory
-
-    int stack[100] = {0}; // 100 is maximum stack size
-    int stack_depth = 0; // Current stack layer
-    int skip = 0; // Skip to end of loop
-
-    i = 0;
-
-    while (1) {
-        char instruction = program[i];
-
-        if (instruction == -1) {
-            break;
-        }
-        else if (instruction == ']') {
-            if (skip) {
-                // The loop never executed
-                skip = 0;
-            }
-            else if (*ptr) {
-                // Loop again
-                i = stack[stack_depth - 1];
-            }
-            else {
-                // Finished looping
-                stack_depth--;
-            }
-        }
-        else if (skip) {
-            // Skipping to end of loop
-        }
-        else if (instruction == '[') {                
-            stack[stack_depth] = i;
-            // record start position of loop
-
-            if (*ptr) {
-                // execute loop
-                stack_depth++;
-            }
-            else {
-                // ptr False, skip loop
-                skip = 1;
-            }
-        }
-        else if (instruction == '>') {
-            // Move pointer up
-            ptr++;
-        }
-        else if (instruction == '<') {
-            // Move pointer down
-            ptr--;
-        }
-        else if (instruction == '+') {
-            // Increment value at pointer
+        else if (skip)
+            {}
+        else if (instruction == '>')
+            ++ptr;
+        else if (instruction == '<')
+            --ptr;
+        else if (instruction == '+')
             ++*ptr;
-        }
-        else if (instruction == '-') {
-            // Decrement value at pointer
+        else if (instruction == '-')
             --*ptr;
-        }
-        else if (instruction == '.') {
-            // Print value at pointer          
+        else if (instruction == '.')
             putchar(*ptr);
-        }
-        else if (instruction == ',') {
-            // Read value to pointer
+        else if (instruction == ',')
             *ptr = getchar();
-        }
-
-        i++; // Next instruction
     }
 
-    return 0;
+    return EXIT_SUCCESS;
+}
+
+int is_instruction(char c) {
+    switch (c) {
+        case '>':
+        case '<':
+        case '+':
+        case '-':
+        case '.':
+        case ',':
+        case '[':
+        case ']':
+            return 1;
+        default:
+            return 0;
+    }
+}
+
+void read_program(char *filename, char *program) {
+    FILE* f;
+    f = fopen(filename, "r"); // Open program file
+    
+    int i = 0, c;
+    while ((c = getc(f)) != EOF) {
+        if (is_instruction(c)) {
+            program[i++] = c;
+        }
+    }
+    program[i] = '\0';
+    
+    fclose(f); // Close program file
+}
+
+StackNode* get_stack_base() {
+    StackNode* base = malloc(sizeof(StackNode));
+    base->prev = NULL;
+    base->val = 0;
+    return base;
+}
+
+void push_to_stack(StackNode** head, int val) {
+    StackNode* new = malloc(sizeof(StackNode));
+    new->val = val;
+    new->prev = *head;
+    *head = new; 
+}
+
+int pop_from_stack(StackNode** head) {
+    StackNode* prev = (StackNode*) (*head)->prev;
+
+    if (prev == NULL) {
+        printf("Tried to pop stack base. Exiting.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    int val = (*head)->val;
+    free(*head);
+    *head = prev;
+    return val;
 }
